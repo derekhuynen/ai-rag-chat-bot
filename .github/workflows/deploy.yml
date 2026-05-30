@@ -1,0 +1,90 @@
+name: Deploy
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  RESOURCE_GROUP: rg-ragchat
+
+jobs:
+  # Gate the deploy on whether Azure OIDC secrets exist. Until the one-time
+  # setup in infra/README.md is done (AZURE_CLIENT_ID / TENANT_ID /
+  # SUBSCRIPTION_ID), the deploy job is skipped rather than failing, so pushes
+  # to main stay green.
+  preflight:
+    runs-on: ubuntu-latest
+    outputs:
+      configured: ${{ steps.check.outputs.configured }}
+    steps:
+      - id: check
+        env:
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+        run: |
+          if [ -n "$AZURE_CLIENT_ID" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Azure OIDC secrets are not configured; skipping deploy. See infra/README.md for the one-time setup."
+          fi
+
+  deploy:
+    needs: preflight
+    if: needs.preflight.outputs.configured == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Resolve resource names
+        id: names
+        run: |
+          FUNC=$(az functionapp list -g "$RESOURCE_GROUP" --query "[0].name" -o tsv)
+          HOST=$(az functionapp show -g "$RESOURCE_GROUP" -n "$FUNC" --query defaultHostName -o tsv)
+          WEB=$(az storage account list -g "$RESOURCE_GROUP" --query "[?contains(name,'web')].name | [0]" -o tsv)
+          echo "func=$FUNC" >> "$GITHUB_OUTPUT"
+          echo "api=https://$HOST/api" >> "$GITHUB_OUTPUT"
+          echo "web=$WEB" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Publish backend
+        run: dotnet publish backend/AzureFunctionApp.csproj -c Release -o publish
+      - name: Deploy backend (Functions)
+        uses: Azure/functions-action@v1
+        with:
+          app-name: ${{ steps.names.outputs.func }}
+          package: publish
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+      - name: Build + deploy frontend
+        run: |
+          echo "VITE_API_BASE_URL=${{ steps.names.outputs.api }}" > frontend/.env.production
+          cd frontend && npm ci && npm run build && cd ..
+          az storage blob service-properties update --account-name "${{ steps.names.outputs.web }}" --static-website --index-document index.html --404-document index.html --auth-mode login
+          # --auth-mode login can fail right after a fresh role grant because data-plane RBAC
+          # takes a few minutes to propagate; retry a few times with a short sleep.
+          for attempt in 1 2 3 4 5; do
+            if az storage blob upload-batch --account-name "${{ steps.names.outputs.web }}" --auth-mode login --destination '$web' --source frontend/dist --overwrite; then
+              exit 0
+            fi
+            echo "upload-batch failed (attempt $attempt); retrying in 20s..."
+            sleep 20
+          done
+          echo "upload-batch failed after all retries" >&2
+          exit 1

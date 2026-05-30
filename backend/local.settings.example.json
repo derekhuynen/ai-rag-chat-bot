@@ -1,0 +1,36 @@
+{
+    "IsEncrypted": false,
+    "Values": {
+        "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+        "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+        "CosmosDb:Endpoint": "https://YOUR_COSMOS_ACCOUNT.documents.azure.com:443/",
+        "CosmosDb:DatabaseName": "ai_chat",
+        "AzureAI:Endpoint": "https://YOUR_AZURE_OPENAI.openai.azure.com/",
+        "AzureAI:DeploymentName": "gpt-4.1",
+        "AzureAI:AvailableModels": "gpt-4.1",
+        "AzureAI:EmbeddingDeployment": "text-embedding-3-small",
+        "AzureSearch:Endpoint": "https://YOUR_SEARCH_SERVICE.search.windows.net",
+        "AzureSearch:IndexName": "ai-chat-documents",
+        "AzureStorage:AccountName": "YOUR_STORAGE_ACCOUNT",
+        "AzureStorage:ContainerName": "ai-chat",
+        "AzureStorage:ImageFolder": "images",
+        "AzureStorage:DocumentFolder": "documents",
+        "AzureStorage:QueueName": "document-processing-queue",
+        "DocumentProcessing:ChunkSize": "800",
+        "DocumentProcessing:ChunkOverlap": "200",
+        "DocumentProcessing:MaxFileSize": "10485760",
+        "RAG:MinRelevanceScore": "0.7",
+        "RAG:MaxResults": "3",
+        "RAG:SemanticWeight": "0.7",
+        "Jwt:SecretKey": "CHANGE_ME_TO_A_SECURE_RANDOM_SECRET",
+        "Jwt:Issuer": "AIChatBot",
+        "Jwt:Audience": "AIChatBot",
+        "Jwt:ExpirationMinutes": "1440",
+        "Admin:Email": "admin@example.com",
+        "Admin:Password": "ChangeThisAdminPassword123!",
+        "Admin:Name": "Administrator"
+    },
+    "Host": {
+        "CORS": "*"
+    }
+}
