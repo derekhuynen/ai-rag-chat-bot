@@ -76,29 +76,38 @@ async function waitForAnswer(page) {
   await page.waitForTimeout(1500); // settle
 }
 
+// Both the login and register modals are always mounted in the sidebar and share
+// field labels, and they overlap briefly during the fade transition, so every
+// field lookup is scoped to the specific dialog (matched by its heading).
+const dialogByHeading = (page, name) =>
+  page.getByRole('dialog').filter({ has: page.getByRole('heading', { name }) });
+
 async function login(page, email, password, remember) {
   await page.getByRole('button', { name: 'Log in' }).click();
-  await page.getByRole('heading', { name: 'Sign In' }).waitFor();
-  await page.getByLabel('Email Address').fill(email);
-  await page.getByLabel('Password').fill(password);
-  if (remember) await page.getByRole('checkbox', { name: 'Remember me' }).check();
-  await page.getByRole('button', { name: 'Sign In' }).click();
+  const dlg = dialogByHeading(page, 'Sign In');
+  await dlg.waitFor();
+  await dlg.getByLabel('Email Address').fill(email);
+  await dlg.getByLabel('Password').fill(password);
+  if (remember) await dlg.getByRole('checkbox', { name: 'Remember me' }).check();
+  await dlg.getByRole('button', { name: 'Sign In' }).click();
   // Logged-in chat view shows the message input.
   await page.getByPlaceholder('Send a message...').waitFor({ timeout: 30000 });
 }
 
 async function registerDemoUser(page) {
   await page.getByRole('button', { name: 'Log in' }).click();
-  await page.getByRole('heading', { name: 'Sign In' }).waitFor();
-  await page.getByRole('button', { name: 'Sign up' }).click();
-  await page.getByRole('heading', { name: 'Create Account' }).waitFor();
-  await page.getByLabel('Name', { exact: true }).fill(cfg.demoName);
-  await page.getByLabel('Email Address').fill(cfg.demoEmail);
-  await page.getByLabel('Password').fill(cfg.demoPassword);
-  await page.getByRole('button', { name: 'Create Account' }).click();
+  const signIn = dialogByHeading(page, 'Sign In');
+  await signIn.waitFor();
+  await signIn.getByRole('button', { name: 'Sign up' }).click();
+  const dlg = dialogByHeading(page, 'Create Account');
+  await dlg.waitFor();
+  await dlg.getByLabel('Name', { exact: true }).fill(cfg.demoName);
+  await dlg.getByLabel('Email Address').fill(cfg.demoEmail);
+  await dlg.getByLabel('Password').fill(cfg.demoPassword);
+  await dlg.getByRole('button', { name: 'Create Account' }).click();
   // Either it succeeds (input appears) or the user already exists (alert shown).
   const ok = page.getByPlaceholder('Send a message...');
-  const alert = page.getByRole('alert');
+  const alert = dlg.getByRole('alert');
   await Promise.race([
     ok.waitFor({ timeout: 15000 }).catch(() => {}),
     alert.waitFor({ timeout: 15000 }).catch(() => {}),
