@@ -1,0 +1,14 @@
+{
+  "name": "ragchat-screenshots",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Playwright script that captures the README marketing screenshots from a running AI RAG Chat Bot.",
+  "scripts": {
+    "capture": "node capture.mjs",
+    "postinstall": "playwright install chromium"
+  },
+  "dependencies": {
+    "playwright": "^1.48.0"
+  }
+}

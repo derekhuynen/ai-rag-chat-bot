@@ -82,6 +82,23 @@ The script uses an AAD bearer token from your `az login` (no admin key needed, b
 service is deployed with local auth disabled). The deploy script prints the Search endpoint at
 the end. Until the index exists, document upload and RAG answers will not work.
 
+## Optional: seed the demo content
+
+Nothing is pre-indexed; the bot is grounded by whatever an admin uploads. To load the
+fictional Contoso sample set (in [`../demo/documents/`](../demo/README.md)) so the chat has
+something to answer against, run:
+
+```powershell
+cd infra
+./seed-demo.ps1 -ApiBaseUrl "<API base URL from deploy.ps1>" `
+                -AdminPassword (Read-Host "Admin password" -AsSecureString)
+```
+
+This logs in as the admin and uploads every `.md`/`.txt` file via the same endpoint the UI
+uses. Each file is chunked, summarized, embedded, and indexed synchronously, so it is
+queryable as soon as the script reports `processed`. Requires the search index (above) to
+exist first. Defaults to `-AdminEmail admin@example.com`.
+
 ## Smoke test (proves it actually works)
 
 1. Open the **SPA URL** in a browser.
