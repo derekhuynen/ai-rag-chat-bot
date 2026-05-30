@@ -2,7 +2,7 @@
 
 # 🤖 AI RAG Chat Bot
 
-### Streaming AI chat with image understanding & retrieval‑augmented generation over your own documents — **keyless Azure, one‑command deploy.**
+### Streaming AI chat with image understanding & retrieval‑augmented generation over your own documents: **keyless Azure, one‑command deploy.**
 
 [![CI](https://github.com/derekhuynen/ai-rag-chat-bot/actions/workflows/ci.yml/badge.svg)](https://github.com/derekhuynen/ai-rag-chat-bot/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -11,9 +11,11 @@
 ![Azure Functions](https://img.shields.io/badge/Azure-Functions-0078D4?logo=microsoftazure&logoColor=white)
 [![Stars](https://img.shields.io/github/stars/derekhuynen/ai-rag-chat-bot?style=social)](https://github.com/derekhuynen/ai-rag-chat-bot/stargazers)
 
-A production‑grade reference app: **Azure Functions (.NET 10) + React**, Semantic Kernel, and Azure AI Search — wired up keyless with Managed Identity and deployable to a cheap, scale‑to‑zero Azure environment in a single command.
+A production‑grade reference app: **Azure Functions (.NET 10) + React**, Semantic Kernel, and Azure AI Search, wired up keyless with Managed Identity and deployable to a cheap, scale‑to‑zero Azure environment in a single command.
 
 ![Chat UI](images/pic1.png)
+
+_Built for fun: a personal project exploring how far a fully keyless, scale-to-zero RAG stack on Azure can go. It is a demo and portfolio piece, not a commercial product, but everything here actually runs._
 
 </div>
 
@@ -21,13 +23,13 @@ A production‑grade reference app: **Azure Functions (.NET 10) + React**, Seman
 
 ## ✨ Why you might like this
 
-- 🔑 **Keyless, end to end.** Cosmos DB, Azure OpenAI, Azure AI Search, and Storage all auth via `DefaultAzureCredential` — Managed Identity in the cloud, `az login` locally. **No API keys or connection strings anywhere.**
+- 🔑 **Keyless, end to end.** Cosmos DB, Azure OpenAI, Azure AI Search, and Storage all auth via `DefaultAzureCredential`: Managed Identity in the cloud, `az login` locally. **No API keys or connection strings anywhere.**
 - 🌊 **Real‑time streaming chat** over Server‑Sent Events, with multi‑turn history persisted in Cosmos DB and one‑click regenerate.
 - 📚 **Hybrid RAG** (keyword + vector) over your own `.txt`/`.md` docs, with **clickable citations** back to the source.
-- 👁 **Image understanding** — paste, drag‑and‑drop, or upload images straight into the chat.
-- 💸 **Cheap by design** — Flex Consumption Functions, serverless Cosmos, Free‑tier AI Search, Storage static website. Scales to zero; ~$0 at idle.
-- 🚀 **One command up, one command down** — Bicep IaC with `deploy.ps1` / `teardown.ps1`, plus OIDC‑based GitHub Actions CI/CD (no stored cloud secrets).
-- 🧪 **Tested & CI‑gated** — xUnit (backend) + Vitest/RTL (frontend) run on every push.
+- 👁 **Image understanding**: paste, drag‑and‑drop, or upload images straight into the chat.
+- 💸 **Cheap by design**: Flex Consumption Functions, serverless Cosmos, Free‑tier AI Search, Storage static website. Scales to zero; ~$0 at idle.
+- 🚀 **One command up, one command down**: Bicep IaC with `deploy.ps1` / `teardown.ps1`, plus OIDC‑based GitHub Actions CI/CD (no stored cloud secrets).
+- 🧪 **Tested & CI‑gated**: xUnit (backend) + Vitest/RTL (frontend) run on every push.
 
 <details>
 <summary>📸 More screenshots</summary>
@@ -55,13 +57,20 @@ A production‑grade reference app: **Azure Functions (.NET 10) + React**, Seman
 
 ## 🚀 Quick start
 
-### Option A — Deploy to Azure (cheap, one command)
+### Option A: Deploy to Azure (cheap, one command)
 
-Infrastructure lives in [`infra/`](infra/README.md) (Bicep + `az`). Spin up a full, cheap environment — Free AI Search, serverless Cosmos, Flex Consumption Functions, a Storage static website for the SPA, and Azure OpenAI (S0):
+Infrastructure lives in [`infra/`](infra/README.md) (Bicep + `az`). Spin up a full, cheap environment: Free AI Search, serverless Cosmos, Flex Consumption Functions, a Storage static website for the SPA, and Azure OpenAI (S0):
 
 ```powershell
 cd infra
 ./deploy.ps1 -Location eastus2 -ResourceGroupName rg-ragchat -SearchSku free
+```
+
+Load the bundled sample documents (`demo/documents/`) so the chat has something to ground answers on:
+
+```powershell
+cd infra
+./seed-demo.ps1 -ApiBaseUrl <API base URL from deploy.ps1> -AdminPassword (Read-Host "Admin password" -AsSecureString)
 ```
 
 Tear it all back down (the whole resource group) with:
@@ -73,7 +82,7 @@ cd infra
 
 See [`infra/README.md`](infra/README.md) for prerequisites, the one‑time GitHub Actions OIDC setup, and cost/region caveats.
 
-### Option B — Run locally
+### Option B: Run locally
 
 > The app is **keyless** and talks to real Azure resources (no local emulators for AI Search / OpenAI), so you'll point at deployed services and authenticate with `az login`. The easiest path is to run `deploy.ps1 -DevPrincipalId <your-object-id>` once, then run the app locally against those cheap resources.
 
@@ -84,7 +93,7 @@ cd ai-rag-chat-bot
 # 1) Backend
 cd backend
 cp local.settings.example.json local.settings.json   # Windows: copy
-#   fill in your endpoint URLs (no keys needed — it's keyless)
+#   fill in your endpoint URLs (no keys needed, it's keyless)
 dotnet restore
 func start                                            # → http://localhost:7071/api
 
@@ -143,7 +152,9 @@ ai-rag-chat-bot/
 │   └── AzureFunctionApp.Tests/ # xUnit test suite
 ├── frontend/                   # React + MUI frontend (Vitest tests)
 │   └── src/                    # components, pages, services, hooks, utils
-├── infra/                      # Bicep + deploy/teardown scripts (cheap, keyless Azure)
+├── infra/                      # Bicep + deploy/teardown/seed scripts (cheap, keyless Azure)
+├── demo/                       # Fictional sample docs to seed RAG for the demo
+├── scripts/                    # Tooling (Playwright screenshot capture)
 └── documents/                  # Backend & frontend architecture docs
 ```
 
@@ -153,16 +164,16 @@ ai-rag-chat-bot/
 
 ## 🔐 Security
 
-- **Keyless by default** — no service keys or connection strings stored anywhere; everything authenticates via `DefaultAzureCredential`.
-- The only application secrets are `Jwt:SecretKey` and `Admin:Password` — local in gitignored `local.settings.json`, in Azure stored in **Key Vault** and referenced from Function App settings.
+- **Keyless by default**: no service keys or connection strings stored anywhere; everything authenticates via `DefaultAzureCredential`.
+- The only application secrets are `Jwt:SecretKey` and `Admin:Password`: local in gitignored `local.settings.json`, in Azure stored in **Key Vault** and referenced from Function App settings.
 - JWTs are signed (HS256, ≥256‑bit key enforced) and validated on every protected endpoint; admin role is re‑checked against the database.
 - Cosmos queries are parameterized; Blob access uses short‑lived **user‑delegation SAS** (no account key).
-- `.env` and `local.settings.json` are gitignored — never commit secrets.
+- `.env` and `local.settings.json` are gitignored: never commit secrets.
 
 <details>
 <summary>⚙️ Configuration reference (<code>local.settings.json</code>)</summary>
 
-The app is keyless, so this file holds **endpoints and account names** plus the `Jwt` and `Admin` values — **not access keys**. Example (also at [`backend/local.settings.example.json`](backend/local.settings.example.json)):
+The app is keyless, so this file holds **endpoints and account names** plus the `Jwt` and `Admin` values: **not access keys**. Example (also at [`backend/local.settings.example.json`](backend/local.settings.example.json)):
 
 ```json
 {
@@ -217,7 +228,7 @@ The frontend reads the backend URL from `VITE_API_BASE_URL` (in `frontend/.env`)
 
 ## 🤝 Contributing & license
 
-Contributions welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for local setup, the checks CI runs (build, lint, tests), and commit/branch conventions. Released under the [MIT License](LICENSE).
+Contributions welcome: see [CONTRIBUTING.md](CONTRIBUTING.md) for local setup, the checks CI runs (build, lint, tests), and commit/branch conventions. Released under the [MIT License](LICENSE).
 
 <div align="center">
 

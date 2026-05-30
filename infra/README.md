@@ -23,7 +23,7 @@ only secrets are the JWT signing key and the admin password, both held in Key Va
 
 - **Azure CLI (`az`)** with the Bicep extension (`az bicep version`; install via `az bicep install`).
 - **.NET 10 SDK** (the backend targets `net10.0`).
-- **Azure Functions Core Tools v4** (`func`) — used to publish the backend to a Flex Consumption app.
+- **Azure Functions Core Tools v4** (`func`): used to publish the backend to a Flex Consumption app.
 - **Node 20+** (to build the SPA).
 - An **Azure subscription** where you can create resource groups and assign roles.
 - `az login` completed.
@@ -54,13 +54,13 @@ uploads the SPA to the static website, grants your signed-in user the data-plane
 can also run the app locally), and prints the **SPA URL** and **API base URL**.
 
 Parameters:
-- `-Location` — region for the whole stack (default `eastus2`).
-- `-SearchSku` — `free` or `basic` (default `free`). See the Search capacity note below.
-- `-SearchLocation` — region for **Azure AI Search only** (defaults to `-Location`). Use this
+- `-Location`: region for the whole stack (default `eastus2`).
+- `-SearchSku`: `free` or `basic` (default `free`). See the Search capacity note below.
+- `-SearchLocation`: region for **Azure AI Search only** (defaults to `-Location`). Use this
   when your main region is out of Search capacity; the app reaches Search over HTTPS, so it does
   not need to sit in the same region as everything else.
-- `-AdminEmail` — first admin account (default `admin@example.com`).
-- `-JwtSecret` / `-AdminPassword` — optional `securestring`s. If omitted, a random JWT is
+- `-AdminEmail`: first admin account (default `admin@example.com`).
+- `-JwtSecret` / `-AdminPassword`: optional `securestring`s. If omitted, a random JWT is
   generated and the admin password defaults to `ChangeThisAdminPassword123!`.
 
 ### This is the exact, verified replication
@@ -146,7 +146,7 @@ region, it lives in the same resource group and is removed by the same teardown.
   either move `-Location`, or edit `modules/functionapp.bicep` to use `sku: { name: 'Y1', tier:
   'Dynamic' }`, drop `functionAppConfig`, and add `FUNCTIONS_EXTENSION_VERSION=~4` +
   `FUNCTIONS_WORKER_RUNTIME=dotnet-isolated`. Note: **.NET 10 cannot run on Linux Consumption (Y1
-  Linux)** — only on Flex, so a Y1 fallback must use a Windows plan.
+  Linux)**: only on Flex, so a Y1 fallback must use a Windows plan.
 - **`func` publish needs `--dotnet-isolated`.** There is no committed `local.settings.json`, so
   `func azure functionapp publish` cannot auto-detect the worker runtime and errors with
   `Worker runtime cannot be 'None'`. The deploy script passes `--dotnet-isolated`; if you publish

@@ -86,7 +86,7 @@ describe('chatService.streamMessage SSE parsing', () => {
     const { onChunk, onComplete, onError } = runStream(
       streamingResponse([
         'data: {"content":"first"}\n\n',
-        // No trailing "\n\n" — relies on the post-loop flush.
+        // No trailing "\n\n";relies on the post-loop flush.
         'data: {"content":"last"}',
       ])
     );
@@ -95,7 +95,7 @@ describe('chatService.streamMessage SSE parsing', () => {
 
     expect(onError).not.toHaveBeenCalled();
     expect(onChunk.mock.calls.map((c) => c[0])).toEqual(['first', 'last']);
-    // Stream ended without [DONE] — completion is still signaled once.
+    // Stream ended without [DONE];completion is still signaled once.
     expect(onComplete).toHaveBeenCalledTimes(1);
   });
 

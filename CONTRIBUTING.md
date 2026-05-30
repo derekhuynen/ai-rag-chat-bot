@@ -7,9 +7,9 @@ issues and pull requests are welcome.
 
 - **.NET SDK** 10.0+ and **Azure Functions Core Tools** v4 (backend)
 - **Node.js** 20+ (frontend)
-- Azure resources (Cosmos DB, Storage, Azure OpenAI, Azure AI Search) — see the
-  [README](README.md#resources-required). The app is keyless and authenticates via
-  `DefaultAzureCredential`, so run `az login` locally.
+- Azure resources (Cosmos DB, Storage, Azure OpenAI, Azure AI Search): see the
+  [README quick start](README.md#-quick-start). The app is keyless and authenticates
+  via `DefaultAzureCredential`, so run `az login` locally.
 
 ## Local setup
 
@@ -50,7 +50,7 @@ Please add or update tests for any behavior you change.
 - **Branches:** work on a feature branch (e.g. `feat/...`, `fix/...`), not directly on `main`.
 - **Commits:** use [Conventional Commits](https://www.conventionalcommits.org/)
   prefixes (`feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `test:`).
-- **Secrets:** never commit `local.settings.json`, `.env` files, or any keys —
+- **Secrets:** never commit `local.settings.json`, `.env` files, or any keys;
   they are gitignored. The app is designed to be keyless; keep it that way.
 - **Security:** validate and parameterize anything that touches user input
   (Cosmos queries use parameterized `QueryDefinition`); don't return raw

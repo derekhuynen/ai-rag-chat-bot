@@ -15,7 +15,7 @@ interface ProtectedRouteProps {
  * user. Unauthenticated users are sent to login; authenticated-but-non-Admin
  * users are sent back to the home page when an admin route is requested.
  *
- * The login UI lives on the home route ("/"), so redirects target "/" — there
+ * The login UI lives on the home route ("/"), so redirects target "/", and there
  * is no standalone "/login" page in this app.
  */
 export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRouteProps) {

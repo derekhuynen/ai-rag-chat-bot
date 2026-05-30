@@ -44,7 +44,7 @@ public class AuthenticationService : IAuthenticationService
         }
 
         // Re-verify the role against current DB state rather than trusting the token's
-        // role claim — covers demotion, deletion, and stale long-lived tokens.
+        // role claim, whichcovers demotion, deletion, and stale long-lived tokens.
         var user = await _cosmosDbService.GetUserByIdAsync(userId);
         if (user == null)
         {

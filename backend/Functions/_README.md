@@ -1,11 +1,17 @@
-# Functions Overview
+# Functions overview
 
-- `DocumentManagementFunction`
-  - Handles admin document upload, listing, retrieval, deletion, and download.
-  - Uploads now perform **synchronous** document processing (chunking, summarization, embeddings, AI Search indexing, and blob move) immediately after saving the document record in Cosmos DB.
-- `DocumentProcessingFunction`
-  - Currently unused placeholder after refactor. Original queue-trigger-based implementation was removed in favor of synchronous processing in `DocumentManagementFunction.UploadDocument`.
-- `QueueSmokeTestFunction`
-  - Temporary queue smoke test used during debugging has been removed.
+Each HTTP-triggered function is a thin controller: it validates auth, calls a
+service, and shapes the response. One feature area per function class.
 
-This keeps the backend aligned with the project guidelines: one feature per function class and no unused test/debug functions in production code.
+- `AuthFunction`: register, login, current user (`/auth/*`).
+- `AdminFunction`: admin stats and user list (`/management/stats`, `/management/users`).
+- `ConversationFunction`: conversation CRUD (`/conversations`).
+- `ChatStreamFunction`: streaming chat over SSE (`/chat/stream`).
+- `ChatFunction`: non-streaming chat (`/chat`), optional.
+- `ImageUploadFunction`: image upload for chat (`/image/upload`).
+- `DocumentUploadFunction`: in-chat document attachment upload (`/document/upload`).
+- `DocumentManagementFunction`: admin RAG document upload, list, get, download,
+  and delete (`/management/documents/*`). Upload runs the full processing
+  pipeline (chunk, summarize, embed, index, blob move) **synchronously** before
+  responding, so a document is queryable as soon as the call returns `processed`.
+- `HealthCheckFunction`: health probe (`/health`).

@@ -18,7 +18,7 @@ resource vault 'Microsoft.KeyVault/vaults@2023-07-01' = {
     enableSoftDelete: true
     softDeleteRetentionInDays: 7
     // Purge protection is opt-in; see param description for the teardown trade-off.
-    // ARM only accepts `true` (it is irreversible once enabled) — when opted out we omit
+    // ARM only accepts `true` (it is irreversible once enabled);when opted out we omit
     // the property entirely rather than sending `false`, which the API rejects.
     enablePurgeProtection: enablePurgeProtection ? true : null
   }

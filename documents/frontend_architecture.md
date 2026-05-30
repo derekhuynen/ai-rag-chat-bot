@@ -1,353 +1,128 @@
-# Frontend Architecture Documentation
+# Frontend Architecture
 
 ## Overview
 
-React-based SPA using TypeScript, Vite, Material UI, and React Query for efficient state management and data fetching.
+A React single-page app in TypeScript, built with Vite and Material UI, using TanStack Query for server state and native `fetch` for SSE streaming.
 
-## Technology Stack
+## Technology stack
 
-- **Framework**: React 19 with TypeScript
-- **Build Tool**: Vite 7
-- **UI Library**: Material UI (MUI) 7
-- **State Management**: React Query (TanStack Query) for server state
-- **Form Management**: react-hook-form with Zod validation
-- **HTTP Client**: Axios for REST calls, native fetch for streaming (SSE)
-- **Routing**: React Router v7
+- **Framework:** React 19 + TypeScript
+- **Build:** Vite 7
+- **UI:** Material UI (MUI) 7, dark theme
+- **Server state:** TanStack Query
+- **Forms:** react-hook-form + Zod
+- **HTTP:** Axios for REST, native `fetch` for streaming (SSE)
+- **Routing:** React Router v7
 
-## Project Structure
+## Project structure
 
 ```
 frontend/src/
-├── components/           # Reusable UI components
+├── components/                 # Reusable UI
 │   ├── LoginModal.tsx
 │   ├── RegisterModal.tsx
 │   ├── MessageInput.tsx
 │   ├── MessageList.tsx
-│   ├── MessageItem.tsx   # Markdown + citations + attachments
-│   └── Sidebar.tsx
-├── pages/               # Page-level components
+│   ├── MessageItem.tsx         # Markdown + citations + attachments
+│   ├── Sidebar.tsx
+│   └── ProtectedRoute.tsx      # Auth/admin route guard
+├── pages/
 │   ├── ChatPage.tsx
 │   ├── AdminDashboard.tsx
 │   └── AdminDocumentsPage.tsx
-├── contexts/            # React contexts
-│   ├── AuthContext.tsx
-│   └── ThemeContext.tsx
-├── services/            # API and business logic
-│   ├── api.ts           # Axios instance with interceptors
-│   ├── authService.ts   # Authentication API calls
-│   ├── chatService.ts   # Chat and streaming API calls
-│   ├── imageUploadService.ts
-│   └── documentService.ts
-├── hooks/               # Custom React hooks
-│   ├── useAuth.ts       # Authentication context and hooks
-│   ├── useChatStream.ts # Streaming chat (SSE)
-│   └── useConversations.ts
-├── theme/               # Theme helpers
-│   └── theme.ts         # Color constants and style objects
-├── utils/               # Utility functions and constants
-│   ├── storage.ts       # Centralized token storage
-│   ├── errors.ts        # Error handling utilities
-│   └── index.ts
-├── types/               # TypeScript type definitions
-│   └── index.ts
-└── App.tsx              # Root component (routes + providers)
+├── contexts/                   # AuthContext, ThemeContext
+├── services/                   # API layer
+│   ├── api.ts                  # Axios instance + interceptors
+│   ├── authService.ts
+│   ├── chatService.ts          # chat + SSE streaming
+│   ├── conversationService.ts
+│   ├── adminService.ts
+│   ├── documentManagementService.ts  # admin RAG documents
+│   ├── documentUploadService.ts      # in-chat document attachments
+│   └── imageUploadService.ts
+├── hooks/                      # useAuth, useChatStream, useConversations
+├── theme/                      # theme.ts (palette + style helpers)
+├── utils/                      # storage.ts, errors.ts, theme.ts
+├── types/                      # shared TypeScript types
+└── App.tsx                     # routes + providers (admin pages lazy-loaded)
 ```
 
-## Key Architectural Patterns
+## Key patterns
 
-### 1. Service Layer Pattern
+### Service layer
+All API calls live in `services/`. `api.ts` holds a shared Axios instance whose request interceptor injects `Authorization: Bearer <token>` and whose response interceptor handles 401 by logging out. This keeps a single source of truth for endpoints, auth, and error handling, and makes mocking easy in tests.
 
-All API calls are centralized in the `services/` folder:
+### Custom hooks for server state
+TanStack Query hooks in `hooks/` provide caching, background refetching, and loading/error states. For example, `useConversations(enabled)` only fetches once the user is authenticated.
 
-- **api.ts**: Axios instance with request/response interceptors for authentication
-- **authService.ts**: Login, register, logout, token management
-- **chatService.ts**: Chat messages, streaming responses, conversation management
+### Centralized utilities
+- **`utils/storage.ts`**: single token store across localStorage (persistent) and sessionStorage (session-only), with `getToken` / `setToken` / `removeToken`.
+- **`utils/theme.ts`**: color palette and reusable MUI `sx` style objects (`darkTextFieldStyles`, `darkDialogStyles`, `darkButtonStyles`, `darkCheckboxStyles`), so styling stays consistent.
+- **`utils/errors.ts`**: `getErrorMessage()` extracts a user-friendly message from Axios errors, strings, or objects.
 
-**Benefits**:
+### Authentication flow
+- "Remember me" stores the token in localStorage; otherwise sessionStorage. `storage.getToken()` checks both.
+- On mount the app reads the token and validates it against `/auth/me`; valid tokens populate `AuthContext`, invalid ones are cleared.
+- `ProtectedRoute` guards the `/admin` routes and enforces the admin role.
 
-- Single source of truth for API calls
-- Consistent error handling
-- Easy to mock for testing
-- Centralized authentication token injection
-
-### 2. Custom Hooks for State Management
-
-React Query hooks in `hooks/` provide:
-
-- Server state caching and synchronization
-- Automatic refetching and background updates
-- Optimistic updates for better UX
-- Loading and error states
-
-**Example**: `useConversations.ts`
-
-```typescript
-export const useConversations = () => {
-	return useQuery({
-		queryKey: ['conversations'],
-		queryFn: conversationService.getUserConversations,
-		staleTime: 1000 * 60 * 5, // 5 minutes
-	});
-};
-```
-
-### 3. Centralized Utilities
-
-#### Storage Utility (`utils/storage.ts`)
-
-- Single `TOKEN_KEY` constant
-- Handles both localStorage (persistent) and sessionStorage (session-only)
-- Methods: `getToken()`, `setToken()`, `removeToken()`, `clearAll()`
-- Eliminates duplicate token retrieval logic across multiple files
-
-#### Theme Utility (`utils/theme.ts`)
-
-- Centralized color palette
-- Reusable style objects for Material-UI components
-- Constants: `colors`, `darkTextFieldStyles`, `darkDialogStyles`, `darkButtonStyles`, `darkCheckboxStyles`
-- Ensures consistent styling across the app
-
-#### Error Utility (`utils/errors.ts`)
-
-- `getErrorMessage()`: Extracts user-friendly error messages from Axios errors, strings, or objects
-- `handleAsyncError()`: Promise-based error handling wrapper
-- Standardizes error handling patterns
-
-### 4. Authentication Flow
-
-**Token Storage Strategy**:
-
-- User selects "Remember me" → token stored in localStorage (persistent)
-- No "Remember me" → token stored in sessionStorage (session-only)
-- `storageService.getToken()` checks both storages automatically
-
-**Auto-Login**:
-
-1. App mounts → checks for token via `storageService.getToken()`
-2. If token found → validates with backend `/auth/me`
-3. If valid → sets user in AuthContext
-4. If invalid → removes token and shows login
-
-**Request Authentication**:
-
-- Axios interceptor in `api.ts` adds `Authorization: Bearer {token}` header
-- Chat streaming uses fetch with manual header: `storageService.getToken()`
-
-### 5. Form Validation
-
-- **react-hook-form**: Performant form state management
-- **Zod**: Runtime schema validation
-- **@hookform/resolvers/zod**: Seamless integration
-
-**Example**:
+### Form validation
+react-hook-form with Zod resolvers:
 
 ```typescript
 const loginSchema = z.object({
-	email: z.string().email('Invalid email address'),
-	password: z.string().min(6, 'Password must be at least 6 characters'),
-});
-
-const {
-	register,
-	handleSubmit,
-	formState: { errors },
-} = useForm<LoginFormData>({
-	resolver: zodResolver(loginSchema),
+  email: z.string().email('Invalid email address'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
 });
 ```
 
-### 6. Streaming Chat Implementation
+### Streaming chat
+Server-Sent Events over the native `fetch` API (Axios does not stream well):
 
-**Technology**: Server-Sent Events (SSE) via native `fetch` API
+1. The user message is added to the UI immediately.
+2. `useChatStream` opens the SSE connection to `/chat/stream` with a manual bearer header.
+3. The backend streams token-by-token; the UI appends chunks in real time.
+4. The streaming message is held in separate state from the persisted history to avoid flicker, then committed on completion (with any RAG citations).
 
-**Flow**:
+## Components
 
-1. User sends message → added to UI immediately
-2. `chatService.streamMessage()` opens SSE connection
-3. Backend streams token-by-token responses
-4. Frontend updates UI in real-time with `onChunk` callback
-5. Message saved to database on completion
+- **MessageList / MessageItem**: render the conversation; `MessageItem` renders Markdown via `react-markdown` + `remark-gfm`, plus image/document attachments and RAG citation chips.
+- **MessageInput**: multi-line input, Enter to send (Shift+Enter for newline), with image and document attach.
+- **Sidebar**: conversation history, new chat, theme toggle, and the user/admin menu.
+- **ChatPage**: orchestrates the chat view.
+- **AdminDashboard / AdminDocumentsPage**: admin overview and the RAG document upload/list/delete UI (lazy-loaded).
 
-**Key Feature**: Streaming message state managed separately from message history to prevent flickering
+## State management
 
-## Component Patterns
+- **Local state** (`useState`) for UI concerns: modals, inputs, toggles.
+- **Server state** (TanStack Query) for conversations, messages, documents, and user data.
+- **Global state** via `AuthContext` (current user) and `ThemeContext` (theme), kept intentionally small.
 
-### Modal Components
+## Styling
 
-- **LoginModal** and **RegisterModal**: Controlled components with open/close props
-- Use `darkDialogStyles`, `darkTextFieldStyles`, `darkButtonStyles` from theme
-- Consistent error handling with `getErrorMessage()`
-- Form validation with react-hook-form + Zod
+A dark theme is enforced through the palette in `theme/theme.ts` and a `ThemeProvider` wrapping the app. Components style via the `sx` prop using the shared style objects in `utils/theme.ts`, so look-and-feel stays consistent without repeating styles.
 
-### Message Components
+## Performance
 
-- **MessageList**: Container for chat messages (streaming + history)
-- **MessageItem**: Renders Markdown (via `react-markdown` + `remark-gfm`), attachments (images/documents), and RAG citation chips
-- **MessageInput**: Multi-line input with Enter-to-send (Shift+Enter for newline), image/document attach hooks
+- TanStack Query caching avoids redundant requests.
+- Admin pages are code-split with `React.lazy` + `Suspense`.
+- Streaming uses incremental DOM updates rather than re-rendering the whole history.
 
-### Layout & Admin Components
+## Security
 
-- **Sidebar**: Conversation history, new chat button, user menu
-- **ChatPage**: Main container orchestrating all chat components
-- **AdminDashboard**: High-level admin overview
-- **AdminDocumentsPage**: Admin-only document upload/list/delete UI for RAG corpus
+- JWT held in web storage (XSS risk acknowledged for a demo); expiration enforced by the backend.
+- Zod validates all form input; Markdown rendering does not inject raw HTML.
+- The backend owns CORS and authorization.
 
-## State Management Strategy
+## Testing
 
-### Local State
+Vitest + React Testing Library cover utilities, hooks, and components (for example `ProtectedRoute.test.tsx`, `chatService.test.ts`, `storage.test.ts`, `errors.test.ts`). The repo's `scripts/screenshots` Playwright tool drives the live app to regenerate the README screenshots. CI runs lint + tests + build on every push.
 
-- Component-specific UI state (modals, inputs, toggles)
-- Managed with `useState`
-
-### Server State
-
-- React Query for API data (conversations, messages, user data)
-- Automatic caching, refetching, and synchronization
-
-### Global State
-
-- **AuthContext**: Current user, login/logout functions
-- **ThemeContext**: Light/dark theme toggle and persistence
-- Minimal additional global state - prefer composition and prop drilling
-
-## Styling Approach
-
-### Material-UI Theme Customization
-
-- Dark theme enforced via `colors` object in `theme/theme.ts`
-- `ThemeProvider` + `ThemeContext` wrap the app in `App.tsx`
-- Consistent color palette across all components via `sx` prop and shared helpers
-
-### Color Palette
-
-```typescript
-colors: {
-  background: { primary, secondary, sidebar, darker, medium, light },
-  text: { primary, secondary, muted, disabled },
-  border: { default, light, medium, hover },
-  button: { primary, primaryHover, secondary, success, successHover, danger, disabled },
-  message: { user, assistant },
-}
-```
-
-### Style Objects
-
-- `darkTextFieldStyles`: Reusable TextField styling (saves ~7 lines per field)
-- `darkDialogStyles`: Modal title and content styling
-- `darkButtonStyles`: Primary button styling
-- `darkCheckboxStyles`: Checkbox checked state styling
-
-## API Integration
-
-### Axios Configuration
-
-- Base URL configured for backend API
-- Request interceptor adds `Authorization` header
-- Response interceptor handles 401 (auto-logout) and other errors
-
-### Streaming with Fetch
-
-- Axios doesn't support streaming responses well
-- Use native `fetch` for SSE connections
-- Manual token injection in headers
-
-### Error Handling
-
-1. Service layer catches errors
-2. React Query handles query/mutation errors
-3. Components display errors via `getErrorMessage()` utility
-4. Consistent error format from backend
-
-## Performance Considerations
-
-### Current Optimizations
-
-- React Query caching reduces redundant API calls
-- Debouncing on input fields (where applicable)
-- Lazy loading for heavy components (planned)
-
-### Future Optimizations
-
-- Virtual scrolling for long message lists
-- Code splitting with React.lazy()
-- Service worker for offline support
-- Optimistic updates for chat messages
-
-## Security Practices
-
-1. **JWT Token Security**:
-
-   - Stored in localStorage/sessionStorage (XSS risk acknowledged)
-   - HttpOnly cookies considered for future
-   - Token expiration enforced by backend (24 hours)
-
-2. **Input Sanitization**:
-
-   - Zod validation on all forms
-   - Markdown rendering sanitizes HTML
-
-3. **CORS**:
-   - Backend enforces CORS policy
-   - Frontend sends credentials with requests
-
-## Testing Strategy (Planned)
-
-1. **Unit Tests**: Vitest for utilities and hooks
-2. **Component Tests**: React Testing Library
-3. **E2E Tests**: Playwright
-4. **API Mocking**: MSW (Mock Service Worker)
-
-## Build and Deployment
-
-### Development
+## Build
 
 ```bash
-npm run dev  # Starts Vite dev server on port 5173
+npm run dev      # Vite dev server on :5173
+npm run build    # type-check + production build to dist/
+npm run preview  # preview the production build
 ```
 
-### Production Build
-
-```bash
-npm run build  # Outputs to dist/
-npm run preview  # Preview production build
-```
-
-### Environment Variables
-
-- `.env.development`: Local backend URL
-- `.env.production`: Production backend URL
-
-## Refactoring Achievements
-
-### Code Duplication Eliminated
-
-1. **Token Retrieval**: Reduced from 6 instances across 3 files to 1 utility
-2. **TextField Styling**: Removed ~21 lines per TextField (2 in LoginModal, 3 in RegisterModal)
-3. **Error Handling**: Standardized with `getErrorMessage()` utility
-4. **Dialog Styling**: Centralized in `darkDialogStyles`
-
-### Before vs After
-
-- **Before**: 6 separate token retrieval implementations
-- **After**: 1 centralized `storageService` utility
-
-- **Before**: ~50 lines of duplicate TextField styling across modals
-- **After**: 1 `darkTextFieldStyles` constant imported where needed
-
-### Files Refactored
-
-- ✅ `services/api.ts` - Uses `storageService.getToken()`
-- ✅ `services/authService.ts` - Delegates to `storageService`
-- ✅ `services/chatService.ts` - Uses `storageService.getToken()`
-- ✅ `components/LoginModal.tsx` - Uses theme constants, `getErrorMessage()`
-- ✅ `components/RegisterModal.tsx` - Uses theme constants, `getErrorMessage()`
-
-## Next Steps
-
-1. Create frontend instruction document for AI guidance
-2. Add virtual scrolling to MessageList
-3. Implement optimistic updates for chat messages
-4. Add loading skeletons for better UX
-5. Implement user settings page
-6. Add admin dashboard UI
-7. Protected route guards
+The backend URL comes from `VITE_API_BASE_URL` (`frontend/.env` locally; `.env.production` is written by `infra/deploy.ps1` at deploy time).

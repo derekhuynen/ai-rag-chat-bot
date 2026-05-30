@@ -147,7 +147,7 @@ export const chatService = {
       // Stream ended without explicit [DONE]; still signal completion.
       onComplete(latestCitations);
     } catch (error) {
-      // Aborts are intentional (unmount / new stream) — swallow them so we don't
+      // Aborts are intentional (unmount / new stream);swallow them so we don't
       // surface a spurious error to the UI.
       if (error instanceof DOMException && error.name === 'AbortError') {
         return;
