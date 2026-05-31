@@ -1,7 +1,8 @@
 // Captures the five README marketing screenshots from a running deployment.
 //
 // It logs in as the admin, runs two demo chats (a RAG answer with citations and
-// a markdown/code answer), and visits the admin pages, writing pic1..pic5.png.
+// a markdown/code answer), and visits the admin pages, writing the five
+// semantically named screenshots into docs/images/.
 // Optionally registers a neutral demo user first so the admin user table has more
 // than one row. Everything is driven by env vars so no secrets live in the repo.
 //
@@ -21,7 +22,7 @@
 //   DEMO_EMAIL         demo user email (default demo@example.com)
 //   DEMO_PASSWORD      demo user password (default DemoPassword123!)
 //   DEMO_NAME          demo user name (default Demo User)
-//   OUT_DIR            output folder (default ../../images)
+//   OUT_DIR            output folder (default ../../docs/images)
 //   HERO_PROMPT        first chat prompt (RAG + citations)
 //   CODE_PROMPT        second chat prompt (markdown + code)
 
@@ -41,7 +42,7 @@ const cfg = {
   demoEmail: process.env.DEMO_EMAIL || 'demo@example.com',
   demoPassword: process.env.DEMO_PASSWORD || 'DemoPassword123!',
   demoName: process.env.DEMO_NAME || 'Demo User',
-  outDir: process.env.OUT_DIR || resolve(__dirname, '../../images'),
+  outDir: process.env.OUT_DIR || resolve(__dirname, '../../docs/images'),
   heroPrompt: process.env.HERO_PROMPT || 'Tell me about projects that use AI.',
   codePrompt:
     process.env.CODE_PROMPT ||
@@ -156,17 +157,17 @@ async function sendChat(page, prompt) {
     console.log(`Logging in as ${cfg.adminEmail}...`);
     await login(page, cfg.adminEmail, cfg.adminPassword, true);
 
-    // --- pic1 + pic4: RAG answer with citations -----------------------------
+    // --- chat-streaming (hero) + rag-citations: RAG answer with citations ----
     console.log('Chat: RAG answer...');
     await sendChat(page, cfg.heroPrompt);
 
-    // pic1 (hero): top of the conversation.
+    // chat-streaming (hero): top of the conversation.
     await page.mouse.wheel(0, -5000);
     await page.waitForTimeout(500);
-    await shot(page, 'pic1.png');
-    console.log('  wrote pic1.png (Chat UI)');
+    await shot(page, 'chat-streaming.png');
+    console.log('  wrote chat-streaming.png (streaming chat hero)');
 
-    // pic4: scroll the citations ("Sources:") into view.
+    // rag-citations: scroll the citations ("Sources:") into view.
     const sources = page.getByText('Sources:', { exact: false }).last();
     if (await sources.isVisible().catch(() => false)) {
       await sources.scrollIntoViewIfNeeded();
@@ -176,10 +177,10 @@ async function sendChat(page, prompt) {
       await page.waitForTimeout(500);
       console.log('  note: no "Sources:" found - is the demo corpus seeded?');
     }
-    await shot(page, 'pic4.png');
-    console.log('  wrote pic4.png (RAG answer with citations)');
+    await shot(page, 'rag-citations.png');
+    console.log('  wrote rag-citations.png (RAG answer with citations)');
 
-    // --- pic5: markdown + code rendering ------------------------------------
+    // --- markdown-rendering: markdown + code rendering ----------------------
     console.log('Chat: markdown/code answer...');
     await sendChat(page, cfg.codePrompt);
     const pre = page.locator('pre').last();
@@ -187,24 +188,24 @@ async function sendChat(page, prompt) {
       await pre.scrollIntoViewIfNeeded();
       await page.waitForTimeout(500);
     }
-    await shot(page, 'pic5.png');
-    console.log('  wrote pic5.png (Markdown & code rendering)');
+    await shot(page, 'markdown-rendering.png');
+    console.log('  wrote markdown-rendering.png (markdown and code rendering)');
 
-    // --- pic2: admin dashboard ----------------------------------------------
+    // --- admin-dashboard ----------------------------------------------------
     console.log('Admin dashboard...');
     await page.goto(`${cfg.spaUrl}/admin`, { waitUntil: 'networkidle' });
     await page.getByText('Admin Dashboard', { exact: false }).first().waitFor({ timeout: 30000 });
     await page.waitForTimeout(1000);
-    await shot(page, 'pic2.png');
-    console.log('  wrote pic2.png (Admin Dashboard)');
+    await shot(page, 'admin-dashboard.png');
+    console.log('  wrote admin-dashboard.png (admin dashboard)');
 
-    // --- pic3: admin documents ----------------------------------------------
+    // --- admin-documents ----------------------------------------------------
     console.log('Admin documents...');
     await page.goto(`${cfg.spaUrl}/admin/documents`, { waitUntil: 'networkidle' });
     await page.getByText('Document Library', { exact: false }).first().waitFor({ timeout: 30000 });
     await page.waitForTimeout(1500); // let the table load
-    await shot(page, 'pic3.png');
-    console.log('  wrote pic3.png (Admin Documents)');
+    await shot(page, 'admin-documents.png');
+    console.log('  wrote admin-documents.png (admin documents)');
 
     console.log(`\nDone. Screenshots written to ${cfg.outDir}`);
   } catch (err) {

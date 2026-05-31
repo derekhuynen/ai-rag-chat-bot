@@ -1,26 +1,27 @@
 # Screenshot capture
 
-Regenerates the README marketing screenshots (`images/pic1.png`–`pic5.png`) from a
-running deployment, using Playwright. Useful so the screenshots can be refreshed
-with clean demo data whenever the UI changes.
+Regenerates the README marketing screenshots in `docs/images/` from a running
+deployment, using Playwright. Useful so the screenshots can be refreshed with
+clean demo data whenever the UI changes.
 
 ## What it captures
 
 | File | Screen |
 |------|--------|
-| `pic1.png` | Chat UI (hero) |
-| `pic2.png` | Admin Dashboard |
-| `pic3.png` | Admin Documents |
-| `pic4.png` | RAG answer with citations |
-| `pic5.png` | Markdown & code rendering |
+| `chat-streaming.png` | Streaming chat (hero) |
+| `rag-citations.png` | RAG answer with citations |
+| `markdown-rendering.png` | Markdown and code rendering |
+| `admin-dashboard.png` | Admin dashboard |
+| `admin-documents.png` | Document library |
 
-The capture order matches these README captions.
+Each file is named for the screen it shows, and the captions in the top-level
+README match.
 
 ## Prerequisites
 
 1. A running deployment (see [`../../infra/README.md`](../../infra/README.md)).
 2. The demo corpus seeded (`infra/seed-demo.ps1`) so the chat has documents to cite,
-   otherwise `pic4` will have no `Sources:` chips.
+   otherwise `rag-citations.png` will have no `Sources:` chips.
 3. Node 20+.
 
 ## Run
@@ -47,7 +48,7 @@ table has a second row. Set `CREATE_DEMO_USER=false` to skip that.
 | `ADMIN_NAME` | `Administrator` | sidebar display name |
 | `CREATE_DEMO_USER` | `true` | register a demo user for the table |
 | `DEMO_EMAIL` / `DEMO_PASSWORD` / `DEMO_NAME` | `demo@example.com` / `DemoPassword123!` / `Demo User` | demo user |
-| `OUT_DIR` | `../../images` | where PNGs are written |
+| `OUT_DIR` | `../../docs/images` | where PNGs are written |
 | `HERO_PROMPT` | "Tell me about projects that use AI." | first chat prompt |
 | `CODE_PROMPT` | (a "run locally" prompt) | second chat prompt (for code rendering) |
 
