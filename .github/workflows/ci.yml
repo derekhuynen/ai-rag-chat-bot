@@ -1,0 +1,58 @@
+name: CI
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Build backend
+        run: dotnet build AI_RAG_Chat_Bot.sln -c Release
+      - name: Test backend
+        run: dotnet test AI_RAG_Chat_Bot.sln -c Release --no-build
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run test
+      - run: npm run build
+
+  # Informational only: upstream/transitive advisories shouldn't turn main red,
+  # but we want them surfaced on every run so regressions are visible.
+  security-audit:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Restore (for vulnerability scan)
+        run: dotnet restore AI_RAG_Chat_Bot.sln
+      - name: dotnet vulnerable packages
+        run: dotnet list AI_RAG_Chat_Bot.sln package --vulnerable --include-transitive
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: npm audit (frontend)
+        working-directory: frontend
+        run: npm audit --audit-level=high

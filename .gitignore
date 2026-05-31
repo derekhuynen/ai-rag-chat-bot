@@ -1,0 +1,42 @@
+# Root .gitignore (defense-in-depth; backend/ and frontend/ have their own too)
+
+# ---- Secrets / local config (never commit) ----
+**/local.settings.json
+.env
+.env.*
+!.env.example
+*.pfx
+*.publishsettings
+
+# ---- .NET build output ----
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+*.user
+.vs/
+
+# ---- Node / frontend ----
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# ---- Logs ----
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ---- Editors ----
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+
+# ---- OS ----
+.DS_Store
+Thumbs.db
+desktop.ini
